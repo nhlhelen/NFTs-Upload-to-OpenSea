@@ -22,15 +22,28 @@ is_polygon = BooleanVar()
 is_polygon.set(False)
 
 def open_chrome_profile():
-    subprocess.Popen(
-        [
-            "start",
-            "chrome",
-            "--remote-debugging-port=8989",
-            "--user-data-dir=" + main_directory + "/chrome_profile",
-        ],
-        shell=True,
+    print("Clicked open chrome profile")
+    # subprocess.Popen(["/usr/local/bin/chromedriver"])
+    # collection_link = collection_link_input.input_field.get()
+    collection_link = "https://opensea.io/collection/honoandfriends"
+    opt = Options()
+    opt.add_experimental_option("debuggerAddress", "localhost:8989")
+
+    open_chrome_profile.driver = webdriver.Chrome(
+        executable_path="/usr/local/bin/chromedriver",
+        # chrome_options=opt,
     )
+    open_chrome_profile.driver.get(collection_link)
+    # subprocess.Popen(
+    #     [
+    #         "start",
+    #         "chrome",
+    #         "--remote-debugging-port=8989",
+    #         "--user-data-dir=" + "/chrome_profile",
+    #     ],
+    #     shell=True,
+    # )
+    # subprocess.Popen([os.path.abspath(os.sep)+ "Applications/Google Chrome.app"])
 
 def save_file_path():
     return os.path.join(sys.path[0], "Save_file.cloud") 
@@ -96,24 +109,28 @@ def main_program_loop():
     ###START###
     project_path = main_directory
     file_path = upload_path
-    collection_link = collection_link_input.input_field.get()
+    collection_link = "https://opensea.io/collection/honoandfriends"
     start_num = int(start_num_input.input_field.get())
     end_num = int(end_num_input.input_field.get())
-    loop_price = float(price.input_field.get())
+    loop_price = "0.004"
     loop_title = title.input_field.get()
     loop_file_format = file_format.input_field.get()
     loop_external_link = str(external_link.input_field.get())
     loop_description = description.input_field.get()
 
     ##chromeoptions
-    opt = Options()
-    opt.add_experimental_option("debuggerAddress", "localhost:8989")
-    driver = webdriver.Chrome(
-        executable_path=project_path + "/chromedriver.exe",
-        chrome_options=opt,
-    )
-    wait = WebDriverWait(driver, 60)
-
+    # opt = Options()
+    # opt.add_experimental_option("debuggerAddress", "localhost:8989")
+    
+    print("About to open chrome")
+    # driver = webdriver.Chrome(
+    #     executable_path="/usr/local/bin/chromedriver",
+    #     chrome_options=opt,
+    # )
+    # driver = webdriver.Chrome('/usr/local/bin/chromedriver')
+    # wait = WebDriverWait(driver, 60)
+    wait = WebDriverWait(open_chrome_profile.driver, 60)
+    print("after open chrome")
     ###wait for methods
     def wait_css_selector(code):
         wait.until(
@@ -131,86 +148,104 @@ def main_program_loop():
 
     while end_num >= start_num:
         print("Start creating NFT " +  loop_title + str(start_num))
-        driver.get(collection_link)
-        # time.sleep(3)
-
+        open_chrome_profile.driver.get(collection_link)
+        time.sleep(3)
+        print("finding add item")
         wait_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/span/a')
-        additem = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/span/a')
-        additem.click()
-        time.sleep(1)
+        additem = open_chrome_profile.driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/span/a')
+        # additem.click()
+        print("initialized add item")
+        open_chrome_profile.driver.execute_script("arguments[0].click();", additem)
+        print("after click add item")
+        time.sleep(5)
 
         wait_xpath('//*[@id="media"]')
-        imageUpload = driver.find_element_by_xpath('//*[@id="media"]')
-        imagePath = os.path.abspath(file_path + "\\" + str(start_num) + "." + loop_file_format)  # change folder here
+        imageUpload = open_chrome_profile.driver.find_element_by_xpath('//*[@id="media"]')
+        imagePath = os.path.abspath(file_path + "/" + str(start_num) + "." + loop_file_format)  # change folder here
         imageUpload.send_keys(imagePath)
 
-        name = driver.find_element_by_xpath('//*[@id="name"]')
+        name = open_chrome_profile.driver.find_element_by_xpath('//*[@id="name"]')
         name.send_keys(loop_title + str(start_num))  # +1000 for other folders #change name before "#"
         time.sleep(0.5)
 
-        ext_link = driver.find_element_by_xpath('//*[@id="external_link"]')
+        ext_link = open_chrome_profile.driver.find_element_by_xpath('//*[@id="external_link"]')
         ext_link.send_keys(loop_external_link)
         time.sleep(0.5)
 
-        desc = driver.find_element_by_xpath('//*[@id="description"]')
+        desc = open_chrome_profile.driver.find_element_by_xpath('//*[@id="description"]')
         desc.send_keys(loop_description)
         time.sleep(0.5)
 
         # Select Polygon blockchain if applicable
         if is_polygon.get():
-            blockchain_button = driver.find_element(By.XPATH, '//*[@id="__next"]/div[1]/main/div/div/section/div/form/div[7]/div/div[2]')
+            blockchain_button = open_chrome_profile.driver.find_element(By.XPATH, '//*[@id="__next"]/div[1]/main/div/div/section/div/form/div[7]/div/div[2]')
             blockchain_button.click()
             polygon_button_location = '//span[normalize-space() = "Mumbai"]'
             wait.until(ExpectedConditions.presence_of_element_located(
                 (By.XPATH, polygon_button_location)))
-            polygon_button = driver.find_element(
+            polygon_button = open_chrome_profile.driver.find_element(
                 By.XPATH, polygon_button_location)
             polygon_button.click()
 
-        create = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/section/div[2]/form/div/div[1]/span/button')
-        driver.execute_script("arguments[0].click();", create)
+        create = open_chrome_profile.driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/section/div[2]/form/div/div[1]/span/button')
+        open_chrome_profile.driver.execute_script("arguments[0].click();", create)
         time.sleep(1)
 
         wait_css_selector("i[aria-label='Close']")
-        cross = driver.find_element_by_css_selector("i[aria-label='Close']")
-        cross.click()
+        cross = open_chrome_profile.driver.find_element_by_css_selector("i[aria-label='Close']")
+        open_chrome_profile.driver.execute_script("arguments[0].click();", cross)
+        # cross.click()
         time.sleep(1)
 
-        main_page = driver.current_window_handle
+        main_page = open_chrome_profile.driver.current_window_handle
         wait_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
-        sell = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
-        sell.click()
+        sell = open_chrome_profile.driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
+        # sell.click()
+        open_chrome_profile.driver.execute_script("arguments[0].click();", sell)
 
         wait_css_selector("input[placeholder='Amount']")
-        amount = driver.find_element_by_css_selector("input[placeholder='Amount']")
+        amount = open_chrome_profile.driver.find_element_by_css_selector("input[placeholder='Amount']")
         amount.send_keys(str(loop_price))
 
         wait_css_selector("button[type='submit']")
-        listing = driver.find_element_by_css_selector("button[type='submit']")
-        listing.click()
+        listing = open_chrome_profile.driver.find_element_by_css_selector("button[type='submit']")
+        open_chrome_profile.driver.execute_script("arguments[0].click();", listing)
+        # listing.click()
         time.sleep(5)
+
+        # window_first = open_chrome_profile.driver.window_handles[0]
+        # window_second = open_chrome_profile.driver.window_handles[1]
+        # open_chrome_profile.driver.switch_to.window(window_second)
+
+        # wait_css_selector("button[data-testid='request-signature__sign']")
+        # # sign = open_chrome_profile.driver.find_element_by_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
+        # sign = open_chrome_profile.driver.find_element_by_css_selector("button[data-testid='request-signature__sign']")
+
+        # open_chrome_profile.driver.execute_script("arguments[0].click();", sign)
+        # # sign.click()
+        # time.sleep(2)
+
+        # open_chrome_profile.driver.switch_to.window(window_first)  
+        # time.sleep(2)
         
-        wait_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
-        sign = driver.find_element_by_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
-        sign.click()
-        time.sleep(2)
-        
-        for handle in driver.window_handles:
+        for handle in open_chrome_profile.driver.window_handles:
             if handle != main_page:
                 login_page = handle
         # change the control to signin page
-        driver.switch_to.window(login_page)
+        open_chrome_profile.driver.switch_to.window(login_page)
         wait_css_selector("button[data-testid='request-signature__sign']")
-        sign = driver.find_element_by_css_selector("button[data-testid='request-signature__sign']")
-        sign.click()
+        sign = open_chrome_profile.driver.find_element_by_css_selector("button[data-testid='request-signature__sign']")
+        open_chrome_profile.driver.execute_script("arguments[0].click();", sign)
+        # sign.click()
         time.sleep(1)
         
         # change control to main page
-        driver.switch_to.window(main_page)
+        open_chrome_profile.driver.switch_to.window(main_page)
         time.sleep(1)
 
         start_num = start_num + 1
         print('NFT creation completed!')
+
 
 #####BUTTON ZONE#######
 button_save = tkinter.Button(root, width=20, text="Save Form", command=save) 
@@ -233,3 +268,5 @@ except FileNotFoundError:
     pass
 #####BUTTON ZONE END#######
 root.mainloop()
+
+
